@@ -22,11 +22,13 @@ namespace ft
 			std::vector<Token>::iterator 			start_token_;
 			std::vector<Token>::iterator			end_token_;
 			std::map<std::string, Directive>		directives_;
+			size_t									max_token_num_;
 
 		public:
 			Parser();
 			std::pair<bool, HttpBlock>			parse(std::vector<Token>& tokens, std::string config_path);
 		private:
+			void						printCurrentTokenInfo(std::string func_name);
 			void						modifyIdentifierToken(std::vector<Token>& tokens);
 
 			std::pair<bool, Directive>			checkValidDirective();

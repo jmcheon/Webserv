@@ -1,4 +1,5 @@
 #include "Parser.hpp"
+#include <iomanip>
 
 namespace ft
 {
@@ -27,15 +28,20 @@ namespace ft
 		current_token_ = tokens.begin();
 		start_token_ = tokens.begin();
 		end_token_ = tokens.end();
+		max_token_num_ = (--tokens.end())->token_num;
+		//std::cout << "Test: max_token_num_: " << max_token_num_ << std::endl;
 		std::pair<bool, HttpBlock> 	http_pair;
 		std::pair<bool, Directive> 	directive_pair;
 
 		//http_pair.second.setConfigPath(config_path);
 		while (current_token_ != end_token_)
 		{
+			printCurrentTokenInfo("parse()");
 			directive_pair = expectHttpContext();
 			if (directive_pair.first == false)
 			{
+				//std::cout << "Test: no http direct: " << directive_pair.second.name << std::endl;
+				printCurrentTokenInfo("parse()");
 				if (expectToken(OPERATOR, "{").first == false)
 				{
 					//std::cout << "Error: Http context can't have any parameter.\n";
@@ -46,12 +52,21 @@ namespace ft
 			}
 			else
 			{
+				//std::cout << "Test: http direct start parse: " << directive_pair.second.name << std::endl;
 				http_pair = parseHttpContext(config_path, directive_pair);
 				if (http_pair.first == false)
 					return (http_pair);
 			}
 		}
 		return (http_pair);
+	}
+
+	void	Parser::printCurrentTokenInfo(std::string func_name)
+	{
+		std::cout << "Test: current_token_ (type, text, token_num, line_num): ";
+		std::cout << "(" << sTokenTypeStrings[current_token_->type] << ", " << current_token_->text << ", ";
+		std::cout << current_token_->token_num << ", " << current_token_->line_num << ")";
+		std::cout << "\t" << func_name << std::endl;
 	}
 
 	void	Parser::modifyIdentifierToken(std::vector<Token>& tokens)
@@ -86,7 +101,10 @@ namespace ft
 		std::map<std::string, Directive>::iterator 	found_directive;
 
 		if (!token_pair.first)
+		{
+			std::cout << "Test: it's not a DIRECTIVE" << std::endl;
 			return (std::make_pair(false, directives_.begin()->second)); 
+		}
 		found_directive = directives_.find(token_pair.second.text);
 		if (found_directive == directives_.end())
 		{
@@ -437,6 +455,7 @@ namespace ft
 			return (std::make_pair(false, return_token));
 
 		return_token = *current_token_;
+		printCurrentTokenInfo("expectToken()");
 		++current_token_;
 		return (std::make_pair(true, return_token));
 	}
@@ -446,6 +465,7 @@ namespace ft
 		std::vector<Token>::iterator parse_start = current_token_;
 		std::pair<bool, Directive> directive_pair = checkValidDirective();
 
+		printCurrentTokenInfo("expectHttpContext() begin");
 		if (directive_pair.first == false) 
 		{
 			if (current_token_ == start_token_)
@@ -465,6 +485,7 @@ namespace ft
 			std::cout << "Error: Http context can't have any parameter.\n";
 			return (std::make_pair(false, directive_pair.second));
 		}
+		printCurrentTokenInfo("expectHttpContext() end");
 		return (std::make_pair(true, directive_pair.second));
 	}
 
