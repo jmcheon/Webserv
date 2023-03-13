@@ -1,5 +1,4 @@
 #include "Parser.hpp"
-#include <iomanip>
 
 namespace ft
 {
@@ -97,7 +96,7 @@ namespace ft
 
 	std::pair<bool, Directive>	Parser::checkValidDirective()
 	{
-		std::pair<bool, Token> 				token_pair = expectToken(DIRECTIVE);
+		std::pair<bool, Token> 						token_pair = expectToken(DIRECTIVE);
 		std::map<std::string, Directive>::iterator 	found_directive;
 
 		if (!token_pair.first)
@@ -139,8 +138,8 @@ namespace ft
 		}
 		else if (current_directive->directive == KEEPALIVE_TIMEOUT)
 		{
-			unsigned int		value;
-			std::string		input_string = (*current_directive->parameters.begin());
+			unsigned int			value;
+			std::string				input_string = (*current_directive->parameters.begin());
 			std::string::size_type	n;
 
 			if (input_string.length() != 0)
@@ -462,43 +461,44 @@ namespace ft
 
 	std::pair<bool, Directive>	Parser::expectHttpContext()
 	{
-		std::vector<Token>::iterator parse_start = current_token_;
-		std::pair<bool, Directive> directive_pair = checkValidDirective();
+		std::vector<Token>::iterator	parse_start = current_token_;
+		std::pair<bool, Directive>		directive_pair = checkValidDirective();
 
 		printCurrentTokenInfo("expectHttpContext() begin");
-		if (directive_pair.first == false) 
+		if (directive_pair.first == false) // when it doesn't start with a directive
 		{
 			if (current_token_ == start_token_)
 				std::cout << "Error: First directive should be http block.\n";
 			current_token_ = parse_start;
 			return (std::make_pair(false, directive_pair.second));
 		}
-		if (directive_pair.second.directive != HTTP)
+		if (directive_pair.second.directive != HTTP) // when the directive isn't http
 		{
 			current_token_ = parse_start;
 			std::cout << "Error: It should start with http context but the directive is ";
 			std::cout << directive_pair.second.name << "\n";
 			return (std::make_pair(false, directive_pair.second));
 		}
-		if (expectToken(OPERATOR, "{").first == false)
+		// until now it starts with http directive and there isn't any parameter
+		if (expectToken(OPERATOR, "{").first == false) // to check there isn't any parameter of http directive and encloses with {
 		{
 			std::cout << "Error: Http context can't have any parameter.\n";
 			return (std::make_pair(false, directive_pair.second));
 		}
-		printCurrentTokenInfo("expectHttpContext() end");
+		printCurrentTokenInfo("expectHttpContext() end:valid http begining");
 		return (std::make_pair(true, directive_pair.second));
 	}
 
 	std::pair<bool, HttpBlock>	Parser::parseHttpContext(std::string config_path, std::pair<bool, Directive> directive_pair)
 	{
 		std::pair<bool, std::vector<Directive> > 	directives;
-		HttpBlock					http_context;
+		HttpBlock									http_context;
 
 		http_context.setConfigPath(config_path);
 		while (current_token_ != end_token_ - 1 && expectToken(OPERATOR, "}").first == false)
 		{
 			directive_pair = expectServerContext();
-			if (directive_pair.first == false)
+			if (directive_pair.first == false) // there are directives before server block
 			{
 				directives = parseContextBody(config_path, HTTP);
 				if (directives.first == false)
@@ -510,13 +510,15 @@ namespace ft
 				if (setHttpDirectiveParameter(http_context, directives.second) == false)
 					return (std::make_pair(false, http_context));
 			}
-			else
+			else // it has server block
 			{
+				// to check there isn't any parameter of server directive and encloses with {
 				if (expectToken(OPERATOR, "{").first == false)
 				{
 					std::cout << "Error: Server block should start with a curly bracket.\n";
 					return (std::make_pair(false, http_context));
 				}
+				// start parsing server block
 				std::pair<bool, ServerBlock>	server_pair = parseServerContext(http_context, directive_pair);
 
 				if (server_pair.first == false)
@@ -530,26 +532,31 @@ namespace ft
 	std::pair<bool, Directive>	Parser::expectServerContext()
 	{
 		std::vector<Token>::iterator 	parse_start = current_token_;
-		std::pair<bool, Directive> 	directive_pair = checkValidDirective();
+		std::pair<bool, Directive> 		directive_pair = checkValidDirective();
 
-		if (directive_pair.first == false) 
+
+
+		printCurrentTokenInfo("expectServerContext() begin");
+		if (directive_pair.first == false) // when it doesn't start with a directive
 		{
 			current_token_ = parse_start;
 			return (std::make_pair(false, directive_pair.second));
 		}
-		if (directive_pair.second.directive != SERVER)
+		if (directive_pair.second.directive != SERVER) // when the directive isn't server 
 		{
 			current_token_ = parse_start;
 			return (std::make_pair(false, directive_pair.second));
 		}
+		// until now it starts with server directive
+		printCurrentTokenInfo("expectServerContext() end:valid server begining");
 		return (std::make_pair(true, directive_pair.second));
 	}
 
 	std::pair<bool, ServerBlock>	Parser::parseServerContext(HttpBlock& http_context, std::pair<bool, Directive> directive_pair)
 	{
 		std::pair<bool, std::vector<Directive> >	directives;
-		std::pair<bool, Token> 				token_pair = expectToken(OPERATOR, "}");
-		ServerBlock					server_context(http_context);
+		std::pair<bool, Token> 						token_pair = expectToken(OPERATOR, "}");
+		ServerBlock									server_context(http_context);
 
 		while (token_pair.first == false)
 		{
@@ -601,8 +608,9 @@ namespace ft
 	std::pair<bool, Directive>	Parser::expectLocationContext()
 	{
 		std::vector<Token>::iterator	parse_start = current_token_;
-		std::pair<bool, Directive>	directive_pair = checkValidDirective();
+		std::pair<bool, Directive>		directive_pair = checkValidDirective();
 
+		printCurrentTokenInfo("expectLocationContext() begin");
 		if (directive_pair.first == false) 
 		{
 			current_token_ = parse_start;
@@ -629,6 +637,7 @@ namespace ft
 			return (std::make_pair(false, directive_pair.second));
 		}
 		directive_pair.second.parameters.push_back(parameter_token_pair.second.text);
+		printCurrentTokenInfo("expectLocationContext() end");
 		return (std::make_pair(true, directive_pair.second));
 	}
 
