@@ -108,7 +108,7 @@ namespace ft
 	void	PrintConfig::printTokens(std::vector<Token>& tokens)
 	{
 		std::cout << "\t\t <Print tokenized tokens>\n";
-		std::cout << "example: Token(token type, text, line number)\n\n";
+		std::cout << "example: Token(token type, text, token number, line number)\n\n";
 		std::vector<ft::Token>::iterator	current_token = tokens.begin();
 		std::vector<ft::Token>::iterator	end_token = tokens.end();
 		(void)ft::sTokenTypeStrings[current_token->type];

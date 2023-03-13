@@ -11,6 +11,7 @@ namespace ft
 		
 		current_token.type = WHITESPACE;
 		current_token.line_num = 1;
+		current_token.token_num = 0;
 		for (it = texts.begin(); it != texts.end(); ++it)
 		{
 			switch (*it)
@@ -83,14 +84,17 @@ namespace ft
 		if (token.type == COMMENT)
 			std::cout << "ignoring comment: " + token.text << std::endl;
 		else if (token.type != WHITESPACE)
+		{
+			token.token_num += 1;
 			tokens.push_back(token);
+		}
 		token.type = WHITESPACE;
 		token.text.erase();
 	}
 
 	void	Token::debugPrint() const
 	{
-		std::cout << "Token(" << sTokenTypeStrings[type] << ", \"" << text << "\", " << line_num << ")" << std::endl;
+		std::cout << "Token(" << sTokenTypeStrings[type] << ", \"" << text << "\", " << token_num << ", " << line_num << ")" << std::endl;
 	}
 /*
 	Token::Token()

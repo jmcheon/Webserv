@@ -31,6 +31,7 @@ namespace ft
 			enum TokenType 	type;
 			std::string	text;
 			size_t		line_num;
+			size_t		token_num;
 
 		public:
 			//Token();
