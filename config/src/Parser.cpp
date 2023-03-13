@@ -62,10 +62,13 @@ namespace ft
 
 	void	Parser::printCurrentTokenInfo(std::string func_name)
 	{
-		std::cout << "Test: current_token_ (type, text, token_num, line_num): ";
-		std::cout << "(" << sTokenTypeStrings[current_token_->type] << ", " << current_token_->text << ", ";
-		std::cout << current_token_->token_num << ", " << current_token_->line_num << ")";
-		std::cout << "\t" << func_name << std::endl;
+		if (current_token_ != end_token_)
+		{
+			std::cout << "Test: current_token_ (type, text, token_num, line_num): ";
+			std::cout << "(" << sTokenTypeStrings[current_token_->type] << ", " << current_token_->text << ", ";
+			std::cout << current_token_->token_num << ", " << current_token_->line_num << ")";
+			std::cout << "\t" << func_name << std::endl;
+		}
 	}
 
 	void	Parser::modifyIdentifierToken(std::vector<Token>& tokens)
@@ -99,12 +102,13 @@ namespace ft
 		std::pair<bool, Token> 						token_pair = expectToken(DIRECTIVE);
 		std::map<std::string, Directive>::iterator 	found_directive;
 
-		if (!token_pair.first)
+		if (!token_pair.first) // it's not a directive token
 		{
 			std::cout << "Test: it's not a DIRECTIVE" << std::endl;
 			return (std::make_pair(false, directives_.begin()->second)); 
 		}
 		found_directive = directives_.find(token_pair.second.text);
+		// check if the directive token is valid
 		if (found_directive == directives_.end())
 		{
 			--current_token_;
@@ -567,7 +571,7 @@ namespace ft
 				 directive_pair.second.directive == HTTP || 
 				 directive_pair.second.directive == LOCATION))
 				return (std::make_pair(false, server_context));
-			else if (directive_pair.first == false)
+			else if (directive_pair.first == false) // 
 			{
 				directives = parseContextBody(server_context.getConfigPath(), SERVER);
 				if (directives.first == false)
@@ -579,13 +583,15 @@ namespace ft
 				if (setServerDirectiveParameter(http_context, server_context, directives.second) == false)
 					return (std::make_pair(false, server_context));
 			}
-			else
+			else // it has location block
 			{
+				// to check there isn't any parameter of location directive and encloses with {
 				if (expectToken(OPERATOR, "{").first == false)
 				{
 					std::cout << "Error: Multiple parameters, location directive should only have one URI path\n";
 					return (std::make_pair(false, server_context));
 				}
+				// start parsing location block
 				std::pair<bool, LocationBlock>	location_pair = parseLocationContext(server_context);
 						
 				if (location_pair.first == false)
@@ -669,17 +675,22 @@ namespace ft
 		std::vector<Directive>		directives;
 		std::pair<bool, Directive> 	simple_directive_pair = expectSimpleDirective(config_path, kind);
 
-		while (simple_directive_pair.first == true)
+		while (simple_directive_pair.first == true) // parse every simple directive until it encounters any block directive
 		{
 			directives.push_back(simple_directive_pair.second);
 			simple_directive_pair = expectSimpleDirective(config_path, kind);
 		}
-		if (simple_directive_pair.first == false) // check if it is a context or an error
+		/*
+		 there are two cases when it returns false
+		 1. it is a block directive(http, server, location)
+		 2. it is an invalid directive or unknown directive
+		*/
+		if (simple_directive_pair.first == false) // check if it is a block directive or an error
 		{
 			if (kind == HTTP)
 			{
 				if (simple_directive_pair.second.directive == SERVER)
-					return (std::make_pair(true, directives));
+					return (std::make_pair(true, directives)); // when it's a valid server directive
 				if (simple_directive_pair.second.directive == HTTP ||
 							simple_directive_pair.second.directive == LOCATION)
 				{
@@ -695,7 +706,7 @@ namespace ft
 			else if (kind == SERVER)
 			{
 				if (simple_directive_pair.second.directive == LOCATION)
-					return (std::make_pair(true, directives));
+					return (std::make_pair(true, directives)); // when it's a valid location directive
 				if ((simple_directive_pair.second.directive == SERVER) ||
 						(simple_directive_pair.second.directive == HTTP))
 				{
@@ -712,6 +723,8 @@ namespace ft
 				std::cout << "Error: There can't be any other block in location block.\n";
 				return (std::make_pair(false, directives));
 			}
+			// until now there isn't any block directive and invalid directive
+			// check if it encloses with }
 			if (expectToken(OPERATOR, "}").first == true)
 			{
 				--current_token_;
@@ -727,16 +740,17 @@ namespace ft
 		std::vector<Token>::iterator 	start_token = current_token_;
 		std::pair<bool, Directive> 		directive_pair = checkValidDirective();
 
-		if (directive_pair.first == true)
+		if (directive_pair.first == true) // it is a directive token
 		{
 			if ((directive_pair.second.directive == HTTP) ||
 				(directive_pair.second.directive == SERVER) ||
-				(directive_pair.second.directive == LOCATION)) // check block directive
+				(directive_pair.second.directive == LOCATION)) // check if it's a block directive
 			{
 				current_token_ = start_token;
-				return (std::make_pair(false, directive_pair.second));
+				return (std::make_pair(false, directive_pair.second)); // return false because it's not a simple directive
 			}
-			if ((kind == HTTP && 
+			// check if it's a valid simple directive of particular directive kind
+			if ((kind == HTTP &&
 				(directive_pair.second.directive == LIMIT_EXCEPT || 
 				directive_pair.second.directive == LISTEN || 
 				directive_pair.second.directive == SERVER_NAME || 
@@ -756,11 +770,11 @@ namespace ft
 				std::cout << "\" directive is not allowed here in ";
 				std::cout << config_path << ":" << current_token_->line_num << std::endl;
 				current_token_ = start_token;
-				return (std::make_pair(false, directive_pair.second));
+				return (std::make_pair(false, directive_pair.second)); // invalid directive in a wrong block directive
 			}
 		
 		}
-		else if (directive_pair.first == false)
+		else if (directive_pair.first == false) // it's not a directive token nor a valid directive token
 		{
 			if (current_token_ != end_token_ && expectToken(OPERATOR, "}").first == false)
 			{
@@ -768,7 +782,7 @@ namespace ft
 				std::cout << config_path << ":" << current_token_->line_num << std::endl;
 			}
 			current_token_ = start_token;
-			return (std::make_pair(false, directive_pair.second));
+			return (std::make_pair(false, directive_pair.second)); // unknown directive error
 		}
 		return (checkValidParameterNumber(config_path, directive_pair));
 	}
