@@ -33,18 +33,21 @@ namespace ft
 		std::pair<bool, Directive> 	directive_pair;
 
 		//http_pair.second.setConfigPath(config_path);
-		while (current_token_ != end_token_)
+		while (current_token_ < end_token_)
 		{
 			printCurrentTokenInfo("parse()");
 			directive_pair = expectHttpContext();
 			if (directive_pair.first == false)
 			{
-				//std::cout << "Test: no http direct: " << directive_pair.second.name << std::endl;
-				printCurrentTokenInfo("parse()");
-				if (expectToken(OPERATOR, "{").first == false)
+				//std::cout << "Test: current_token_: " << current_token_->text << std::endl;
+				//printCurrentTokenInfo("parse() http pair false");
+				std::cout << "Test: current_token_: " << current_token_->token_num << std::endl;
+				if (http_pair.first == true)
 				{
-					//std::cout << "Error: Http context can't have any parameter.\n";
-					return (http_pair);
+					std::cout << "Error: unexpected \"" << current_token_->text << "\" in ";
+					std::cout << config_path << ":" << current_token_->line_num << std::endl;
+					//printCurrentTokenInfo("parse() ending error");
+					return (std::make_pair(false, http_pair.second)); 
 				}
 				else
 					++current_token_;
@@ -62,6 +65,7 @@ namespace ft
 
 	void	Parser::printCurrentTokenInfo(std::string func_name)
 	{
+		(void)func_name;
 		if (current_token_ != end_token_)
 		{
 			std::cout << "Test: current_token_ (type, text, token_num, line_num): ";
@@ -457,8 +461,8 @@ namespace ft
 		if (!name.empty() && current_token_->text != name)
 			return (std::make_pair(false, return_token));
 
+		//printCurrentTokenInfo("expectToken()");
 		return_token = *current_token_;
-		printCurrentTokenInfo("expectToken()");
 		++current_token_;
 		return (std::make_pair(true, return_token));
 	}
@@ -499,7 +503,7 @@ namespace ft
 		HttpBlock									http_context;
 
 		http_context.setConfigPath(config_path);
-		while (current_token_ != end_token_ - 1 && expectToken(OPERATOR, "}").first == false)
+		while (current_token_ < end_token_ && expectToken(OPERATOR, "}").first == false)
 		{
 			directive_pair = expectServerContext();
 			if (directive_pair.first == false) // there are directives before server block
